@@ -188,14 +188,18 @@ def AudioCallback(outdata, frame_count, time_info, status):
     global playingsounds
     rmlist = []
     playingsounds = playingsounds[-MAX_POLYPHONY:]
-    b = samplerbox_audio.mixaudiobuffers(playingsounds, rmlist, frame_count, FADEOUT, FADEOUTLENGTH, SPEED)
-    for e in rmlist:
-        try:
-            playingsounds.remove(e)
-        except:
-            pass
-    b *= globalvolume
-    outdata[:] = b.reshape(outdata.shape)
+    try:
+        b = samplerbox_audio.mixaudiobuffers(playingsounds, rmlist, frame_count, FADEOUT, FADEOUTLENGTH, SPEED)
+    except:
+        logging.error('Samplerbox_audio error!')
+    else:
+        for e in rmlist:
+            try:
+                playingsounds.remove(e)
+            except:
+                pass
+        b *= globalvolume
+        outdata[:] = b.reshape(outdata.shape)
 
 def MidiCallback(message, time_stamp):
     global playingnotes, sustain, sustainplayingnotes
@@ -211,13 +215,16 @@ def MidiCallback(message, time_stamp):
 
     if messagetype == 9:    # Note on
         midinote += globaltranspose
+        logging.debug('Note on: {}'.format(midinote))
         try:
             playingnotes.setdefault(midinote, []).append(samples[midinote, velocity].play(midinote))
         except:
+            logging.error('Note on fail!')
             pass
 
     elif messagetype == 8:  # Note off
         midinote += globaltranspose
+        logging.debug('Note off: {}'.format(midinote))
         if midinote in playingnotes:
             for n in playingnotes[midinote]:
                 if sustain:
@@ -227,9 +234,13 @@ def MidiCallback(message, time_stamp):
             playingnotes[midinote] = []
 
     elif messagetype == 12:  # Program change
-        print 'Program change ' + str(note)
-        preset = note
-        LoadSamples()
+	try:
+            print 'Program change ' + str(note)
+            preset = note
+            LoadSamples()
+        except:
+            print 'Program change fail!'
+            logging.error('Program change fail!')
 
     elif (messagetype == 11) and (note == 64) and (velocity < 64):  # sustain pedal off
         for n in sustainplayingnotes:
@@ -468,7 +479,6 @@ if USE_SERIALPORT_MIDI:
     else:
         ser = serial.Serial('/dev/ttyAMA0', baudrate=115200)
         logging.info('Hardware serial (ttyAMA0), baudrate 115200')
-        
 
     def MidiSerialCallback():
         message = [0, 0, 0]
