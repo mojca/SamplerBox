@@ -279,6 +279,8 @@ def ActuallyLoad():
 
     logging.debug('ActuallyLoad function started')
     samplesdir = SAMPLES_DIR if os.listdir(SAMPLES_DIR) else '.'      # use current folder (containing 0 Saw) if no user media containing samples has been found
+    logging.debug('Samples dir: {}'.format(samplesdir))
+
 
     basename = next((f for f in os.listdir(samplesdir) if f.startswith("%d " % preset)), None)      # or next(glob.iglob("blah*"), None)
     if basename:
@@ -457,7 +459,16 @@ if USE_SERIALPORT_MIDI:
     import serial
 
     # ser = serial.Serial('/dev/ttyAMA0', baudrate=38400)       # see hack in /boot/cmline.txt : 38400 is 31250 baud for MIDI!
-    ser = serial.Serial('/dev/ttyUSB0', baudrate=115200)   # the problem is that 38400 may change to 31250 or vice-versa, to avoid this we just use 115200 fixed baudrate
+    if os.path.exists('/dev/ttyUSB0'):
+        ser = serial.Serial('/dev/ttyUSB0', baudrate=115200)   # the problem is that 38400 may change to 31250 or vice-versa, to avoid this we just use 115200 fixed baudrate
+        logging.info('Using ttyUSB0')
+    elif os.path.exists('/dev/ttyUSB1'):
+        ser = serial.Serial('/dev/ttyUSB1', baudrate=115200)
+        logging.info('Using ttyUSB1')
+    else:
+        ser = serial.Serial('/dev/ttyAMA0', baudrate=115200)
+        logging.info('Hardware serial (ttyAMA0), baudrate 115200')
+        
 
     def MidiSerialCallback():
         message = [0, 0, 0]
