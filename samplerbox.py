@@ -14,9 +14,9 @@
 # CONFIG
 #########################################
 
-AUDIO_DEVICE_ID = 2                     # change this number to use another soundcard
-SAMPLES_DIR = "."                       # The root directory containing the sample-sets. Example: "/media/" to look for samples on a USB stick / SD card
-USE_SERIALPORT_MIDI = False             # Set to True to enable MIDI IN via SerialPort (e.g. RaspberryPi's GPIO UART pins)
+AUDIO_DEVICE_ID = 1                     # change this number to use another soundcard
+SAMPLES_DIR = "/media/"                 # The root directory containing the sample-sets. Example: "/media/" to look for samples on a USB stick / SD card
+USE_SERIALPORT_MIDI = True              # Set to True to enable MIDI IN via SerialPort (e.g. RaspberryPi's GPIO UART pins)
 USE_I2C_7SEGMENTDISPLAY = False         # Set to True to use a 7-segment display via I2C
 USE_BUTTONS = False                     # Set to True to use momentary buttons (connected to RaspberryPi's GPIO pins) to change preset
 MAX_POLYPHONY = 80                      # This can be set higher, but 80 is a safe value
@@ -38,7 +38,17 @@ from chunk import Chunk
 import struct
 import rtmidi_python as rtmidi
 import samplerbox_audio
+import logging
+from datetime import datetime
 
+####
+# Test logging
+####
+
+start_time = datetime.utcnow()
+logging.basicConfig(filename='SamplerBox.log', encoding='utf-8', level=logging.DEBUG)
+logging.info('Datetime: {}'.format(datetime.utcnow()))
+logging.info('SamplerBox script running')
 
 #########################################
 # SLIGHT MODIFICATION OF PYTHON'S WAVE MODULE
@@ -267,6 +277,7 @@ def ActuallyLoad():
     globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
     globaltranspose = 0
 
+    logging.debug('ActuallyLoad function started')
     samplesdir = SAMPLES_DIR if os.listdir(SAMPLES_DIR) else '.'      # use current folder (containing 0 Saw) if no user media containing samples has been found
 
     basename = next((f for f in os.listdir(samplesdir) if f.startswith("%d " % preset)), None)      # or next(glob.iglob("blah*"), None)
@@ -274,9 +285,11 @@ def ActuallyLoad():
         dirname = os.path.join(samplesdir, basename)
     if not basename:
         print 'Preset empty: %s' % preset
+        logging.debug('Preset empty: {}'.format(preset))
         display("E%03d" % preset)
         return
     print 'Preset loading: %s (%s)' % (preset, basename)
+    logging.debug('Preset loading: {}'.format(preset))
     display("L%03d" % preset)
 
     definitionfname = os.path.join(dirname, "definition.txt")
@@ -309,6 +322,8 @@ def ActuallyLoad():
                             if notename:
                                 midinote = NOTES.index(notename[:-1].lower()) + (int(notename[-1])+2) * 12
                             samples[midinote, velocity] = Sound(os.path.join(dirname, fname), midinote, velocity)
+                            # print which fname corresponds to specific midinote
+                            print("Note ",midinote," file: ",fname)
                 except:
                     print "Error in definition file, skipping line %s." % (i+1)
 
@@ -340,9 +355,11 @@ def ActuallyLoad():
     if len(initial_keys) > 0:
         print 'Preset loaded: ' + str(preset)
         display("%04d" % preset)
+	logging.info('Preset loaded: {}, t={}'.format(preset, datetime.utcnow() - start_time))
     else:
         print 'Preset empty: ' + str(preset)
         display("E%03d" % preset)
+	logging.info('Preset empty: {}'.format(preset))
 
 
 #########################################
@@ -426,6 +443,10 @@ else:
     def display(s):
         pass
 
+# Load first soundbank
+preset=0
+# LoadSamples()  # threaded
+ActuallyLoad() # non-threaded
 
 #########################################
 # MIDI IN via SERIAL PORT
@@ -435,7 +456,8 @@ else:
 if USE_SERIALPORT_MIDI:
     import serial
 
-    ser = serial.Serial('/dev/ttyAMA0', baudrate=38400)       # see hack in /boot/cmline.txt : 38400 is 31250 baud for MIDI!
+    # ser = serial.Serial('/dev/ttyAMA0', baudrate=38400)       # see hack in /boot/cmline.txt : 38400 is 31250 baud for MIDI!
+    ser = serial.Serial('/dev/ttyUSB0', baudrate=115200)   # the problem is that 38400 may change to 31250 or vice-versa, to avoid this we just use 115200 fixed baudrate
 
     def MidiSerialCallback():
         message = [0, 0, 0]
@@ -450,11 +472,13 @@ if USE_SERIALPORT_MIDI:
                 if i == 2 and message[0] >> 4 == 12:  # program change: don't wait for a third byte: it has only 2 bytes
                     message[2] = 0
                     i = 3
+            print(message)
             MidiCallback(message, None)
 
     MidiThread = threading.Thread(target=MidiSerialCallback)
     MidiThread.daemon = True
     MidiThread.start()
+    logging.info('SerialPort midi started')
 
 
 #########################################
@@ -462,8 +486,8 @@ if USE_SERIALPORT_MIDI:
 #
 #########################################
 
-preset = 0
-LoadSamples()
+#preset = 0
+#LoadSamples()
 
 
 #########################################
