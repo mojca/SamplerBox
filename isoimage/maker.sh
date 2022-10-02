@@ -9,9 +9,9 @@
 
 set -e  # exit immediately if a command exits with a non-zero status
 apt install -y kpartx parted zip
-[ ! -f "2021-05-07-raspios-buster-armhf-lite.zip" ] && wget https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-05-28/2021-05-07-raspios-buster-armhf-lite.zip
-[ ! -f "2021-05-07-raspios-buster-armhf-lite.img" ] && unzip 2021-05-07-raspios-buster-armhf-lite.zip
-cp 2021-05-07-raspios-buster-armhf-lite.img sb.img
+[ ! -f "2022-09-22-raspios-bullseye-arm64-lite.img.xz" ] && wget https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2022-09-26/2022-09-22-raspios-bullseye-arm64-lite.img.xz
+[ ! -f "2022-09-22-raspios-bullseye-arm64-lite.img" ] && unxz --keep 2022-09-22-raspios-bullseye-arm64-lite.img.xz
+cp 2022-09-22-raspios-bullseye-arm64-lite.img sb.img
 truncate -s 2500M sb.img      # M=1024*1024
 kpartx -av sb.img
 parted -m /dev/loop0 resizepart 2 2499MiB  # MiB=1024*1024
@@ -22,7 +22,7 @@ mount -v -t ext4 -o sync /dev/mapper/loop0p2 sdcard
 mount -v -t vfat -o sync /dev/mapper/loop0p1 sdcard/boot
 echo root:root | chroot sdcard chpasswd
 chroot sdcard apt update
-chroot sdcard apt -y install git python3-pip python3-smbus python3-numpy libportaudio2 raspberrypi-kernel ntpdate
+chroot sdcard apt -y install git python3-pip python3-smbus python3-numpy libportaudio2 raspberrypi-kernel ntpdate libasound2-dev
 chroot sdcard pip3 install cython rtmidi-python cffi sounddevice pyserial
 chroot sdcard sh -c "cd /root ; git clone https://github.com/josephernest/SamplerBox.git ; cd SamplerBox ; python3 setup.py build_ext --inplace"
 cp -R root/* sdcard
