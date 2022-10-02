@@ -48,5 +48,5 @@ umount -v sdcard/boot
 umount -v sdcard
 kpartx -dv sb.img
 sync
-zip sb.zip sb.img
+xz -zkv sb.img
 exit 0
