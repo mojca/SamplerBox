@@ -30,8 +30,8 @@ mount -v -t ext4 -o sync /dev/mapper/loop0p2 sdcard
 mount -v -t vfat -o sync /dev/mapper/loop0p1 sdcard/boot
 echo root:root | chroot sdcard chpasswd
 chroot sdcard apt update
-chroot sdcard apt -y install git python3-pip python3-smbus python3-numpy libportaudio2 raspberrypi-kernel ntpdate libasound2-dev
-chroot sdcard pip3 install cython rtmidi-python cffi sounddevice pyserial
+chroot sdcard apt -y install git python3-pip python3-smbus python3-numpy libportaudio2 raspberrypi-kernel ntpdate libasound2-dev libjack-dev
+chroot sdcard pip3 install cython python-rtmidi cffi sounddevice pyserial
 chroot sdcard sh -c "cd /root ; git clone https://github.com/josephernest/SamplerBox.git ; cd SamplerBox ; git remote add mojca https://github.com/mojca/SamplerBox.git ; git checkout midiatonerca ; python3 setup.py build_ext --inplace"
 cp -R root/* sdcard
 chroot sdcard chmod +x /root/usb-mount.sh
