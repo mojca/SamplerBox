@@ -175,7 +175,8 @@ playingnotes = {}
 sustainplayingnotes = []
 sustain = False
 playingsounds = []
-globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
+# globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
+globalvolume = 10 ** (-8.0/20)  # 0dB causes clipping!
 globaltranspose = 0
 
 
@@ -285,7 +286,7 @@ def ActuallyLoad():
     global globalvolume, globaltranspose
     playingsounds = []
     samples = {}
-    globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
+    # globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
     globaltranspose = 0
 
     logging.debug('ActuallyLoad function started')
