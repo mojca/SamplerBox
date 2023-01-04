@@ -428,7 +428,7 @@ midi_in = [rtmidi.MidiIn()]
 previous = []
 while True:
     for port in midi_in[0].get_ports():
-        if port not in previous and b'Midi Through' not in port:
+        if port not in previous and 'Midi Through' not in port:
             midi_in.append(rtmidi.MidiIn())
             midi_in[-1].callback = MidiCallback
             midi_in[-1].open_port(port)
